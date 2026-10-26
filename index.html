@@ -342,7 +342,7 @@ canvas.gamecv{width:100%;border-radius:var(--r);box-shadow:var(--shadow);touch-a
 .rsq .stone{position:static;transform:none;width:82%}
 .rsq .stone.flip{animation:flip .35s}
 @keyframes flip{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
-.hint{width:26%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.4)}
+.rhint{width:26%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.4)}
 .endcard{position:relative;margin-top:16px;border:3px solid var(--sun)}
 /* team */
 .teamcard{display:flex;flex-direction:column;gap:14px;background:linear-gradient(160deg,#FFFFFF,#F4F0FF)}
@@ -1859,7 +1859,7 @@ const BRENDER={
   omok(){const s=M.st,N=15;const stars=[[3,3],[3,11],[7,7],[11,3],[11,11]].map(([r,c])=>`<circle cx="${c+.5}" cy="${r+.5}" r=".12"/>`).join('');let h=gridLines(N,N,stars);
     for(let i=0;i<N*N;i++){const r=Math.floor(i/N),c=i%N,v=s.b[i];h+=v?`<span class="stone ${v===1?'k':'w'} ${s.last===i?'last':''} ${s.line&&s.line.includes(i)?'win':''}" style="${pos(r,c,N,N)}"></span>`:`<button class="pt" style="${pos(r,c,N,N)}" onclick="bclick(${i})" aria-label="${r+1}행 ${c+1}열"></button>`}return h},
   reversi(){const s=M.st,mv=M.over?[]:REVERSI.moves(s.b,s.turn);const human=M.seat[sideIdx()]!=='cpu';let h='';
-    for(let i=0;i<64;i++){const v=s.b[i];h+=`<button class="rsq ${s.last===i?'last':''}" onclick="bclick(${i})" aria-label="${'abcdefgh'[i&7]}${(i>>3)+1}">${v?`<span class="stone ${v===1?'k':'w'} ${s.flipped&&s.flipped.includes(i)?'flip':''}"></span>`:human&&mv.includes(i)?'<i class="hint"></i>':''}</button>`}return h}};
+    for(let i=0;i<64;i++){const v=s.b[i];h+=`<button class="rsq ${s.last===i?'last':''}" onclick="bclick(${i})" aria-label="${'abcdefgh'[i&7]}${(i>>3)+1}">${v?`<span class="stone ${v===1?'k':'w'} ${s.flipped&&s.flipped.includes(i)?'flip':''}"></span>`:human&&mv.includes(i)?'<i class="rhint"></i>':''}</button>`}return h}};
 
 /* --- 입력 처리 --- */
 function bclick(i){if(!M||M.over||M.promo)return;const cur=sideIdx();if(M.seat[cur]==='cpu')return;const s=M.st;
