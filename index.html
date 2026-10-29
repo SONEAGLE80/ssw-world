@@ -1865,7 +1865,7 @@ const DIFF_NAME={easy:'쉬움',normal:'보통',hard:'어려움'};
 let SU=null, M=null;
 
 function setupFor(g){if(!SU||SU.g!==g)SU={g,mode:'cpu',diff:'normal',first:'me',opp:null,oppOk:false,pin:'',jg:['마상상마','마상상마']};return SU}
-VIEWS.setup=()=>{const g=GAMES.find(x=>x.id===arg);const I=BOARD_INFO[g.id];const su=setupFor(g.id);
+VIEWS.setup=()=>{if(M&&M.g!==arg)M=null;const g=GAMES.find(x=>x.id===arg);const I=BOARD_INFO[g.id];const su=setupFor(g.id);
   const people=[...KIDS,...PARENTS].filter(k=>k.id!==who);
   const meName=nameOf(who),oppName=su.mode==='cpu'?'컴퓨터':su.opp?(KID(su.opp)||PAR(su.opp)).name:'상대';
   return `<div class="stage" style="max-width:820px"><div class="stage-h"><button class="back" onclick="go('games')" aria-label="게임존으로">←</button><h2>${g.ic} ${g.name} <span class="en">${g.en}</span></h2><button class="homebtn" onclick="go('home')" aria-label="홈으로">🏠</button></div>
@@ -1893,7 +1893,7 @@ function recordLine(g){const ms=S.matches.filter(m=>m.g===g&&(m.a===who||m.b===w
   return `<div class="pill" style="align-self:flex-start">내 전적 ${w}승 ${d}무 ${l}패</div>`}
 function duoPin(k){const su=SU;const L=S.pins[su.opp].length;if(k==='del')su.pin=su.pin.slice(0,-1);else if(su.pin.length<L)su.pin+=k;
   if(su.pin.length===L){if(su.pin===S.pins[su.opp]){su.oppOk=true;beep('ok');toast('👥 '+(KID(su.opp)||PAR(su.opp)).name+' 로그인 완료!')}else{beep('no');su.pin='';SU.shake=true;setTimeout(()=>{SU.shake=false;render()},400)}}render()}
-function startMatch(){if(M&&(!SU||SU.g!==M.g))setupFor(M.g);if(!spendEnergy()){PENDING=['board',SU.g];go('charge');return}const su=SU,g=su.g;let firstMe=su.first==='me'||(su.first==='rand'&&Math.random()<.5);const other=su.mode==='cpu'?'cpu':su.opp;
+function startMatch(rg){if(rg&&(!SU||SU.g!==rg))setupFor(rg);if(!spendEnergy()){PENDING=['board',SU.g];go('charge');return}const su=SU,g=su.g;let firstMe=su.first==='me'||(su.first==='rand'&&Math.random()<.5);const other=su.mode==='cpu'?'cpu':su.opp;
   const seat=firstMe?[who,other]:[other,who];
   const st=g==='chess'?CHESS.init():g==='janggi'?JANGGI.init({cho:su.jg[0],han:su.jg[1]}):g==='omok'?OMOK.init():REVERSI.init();
   M={g,seat,diff:su.diff,st,hist:[],sel:null,tg:[],over:null,promo:null,flip:false,hanja:false,notice:'',moves:0};go('board',g)}
@@ -1918,7 +1918,7 @@ VIEWS.board=()=>{if(!M||M.g!==arg){setupFor(arg);return VIEWS.setup()}const I=BO
      <div class="bctrl"><button class="btn sm ghost" onclick="undoMove()" ${M.hist.length&&!M.over?'':'disabled'}>↶ 무르기</button>
       ${M.g==='chess'?`<button class="btn sm ghost" onclick="M.flip=!M.flip;render()">⇅ 판 돌리기</button>`:''}${M.g==='janggi'?`<button class="btn sm ghost" onclick="M.hanja=!M.hanja;render()">${M.hanja?'한글로':'漢字로'} 보기</button>`:''}
       ${st.mustPass&&!M.over&&M.seat[cur]!=='cpu'?`<button class="btn sm" onclick="doPass()">한 수 쉬기</button>`:''}
-      ${M.over?`<button class="btn sm" onclick="startMatch()">↻ 다시 하기</button>`:`<button class="btn sm ghost" onclick="resign()">🏳 기권</button>`}</div>
+      ${M.over?`<button class="btn sm" onclick="startMatch('${M.g}')">↻ 다시 하기</button>`:`<button class="btn sm ghost" onclick="resign()">🏳 기권</button>`}</div>
      ${M.g==='chess'&&M.st.san.length?`<div class="san">${M.st.san.map((s,i)=>i%2?`<span>${s}</span>`:`<b>${i/2+1}.</b><span>${s}</span>`).join(' ')}</div>`:''}</div></div>
    ${M.promo?`<div class="lock" style="background:rgba(20,28,94,.6)"><div class="card" style="color:var(--ink);text-align:center"><h3>어떤 기물로 승진할까요?</h3><div class="promo">${'QRBN'.split('').map(q=>`<button onclick="pickPromo('${q}')" class="${M.st.turn}">${GLY[q]}</button>`).join('')}</div></div></div>`:''}
    ${M.over?endCard():''}</div>`};
@@ -1984,7 +1984,7 @@ function endCard(){const o=M.over;const win=o.w>=0?M.seat[o.w]:null;const title=
   return `<div class="card result endcard"><span class="big">${o.w===-1?'🤝':win==='cpu'?'🤖':'🏆'}</span><h2 style="font-size:26px">${title}</h2><p class="muted" style="margin:0">${esc(o.why)}</p>
    <div class="gain">${Object.entries(M.gain||{}).map(([id,x])=>`<span>${nameOf(id)} +${x} XP</span>`).join('')}</div>
    ${typeof shakeHtml==='function'?shakeHtml():''}
-   <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="btn" onclick="startMatch()">↻ 다시 하기</button><button class="btn ghost" onclick="leaveBoard()">대결 설정</button><button class="btn ghost" onclick="leaveBoard('games')">게임존</button></div></div>`}
+   <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="btn" onclick="startMatch('${M.g}')">↻ 다시 하기</button><button class="btn ghost" onclick="leaveBoard()">대결 설정</button><button class="btn ghost" onclick="leaveBoard('games')">게임존</button></div></div>`}
 
 /* ===================================================================
    🤝 우리 팀 — 세 남매의 우애를 키우는 기능
