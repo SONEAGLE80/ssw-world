@@ -1398,6 +1398,7 @@ VIEWS.dad=()=>{dadForm=dadForm||blankForm();const f=dadForm;
    <aside class="sec"><section class="card sec"><h2 style="font-size:20px">⏱ 하루 놀이 시간</h2>
      <label class="f">하루 최대 <span class="num" id="limv">${S.settings.limitMin?S.settings.limitMin+'분':'제한 없음'}</span><input type="range" id="lim" min="0" max="180" step="10" value="${S.settings.limitMin}" oninput="document.getElementById('limv').textContent=this.value==0?'제한 없음':this.value+'분'" onchange="S.settings.limitMin=+this.value;save();toast('놀이 시간을 저장했어요')"></label>
      <p class="muted" style="margin:0;font-size:13px">시간이 다 되면 "오늘은 여기까지" 화면이 나와요. 0으로 두면 제한이 없어요.</p></section>
+    ${typeof dadVoiceUI==='function'?dadVoiceUI():''}
     <section class="card sec"><h2 style="font-size:20px">🐵 게임 쉬는 시간</h2>
      <label class="f">게임을 <select class="in" id="brk" style="max-width:130px" onchange="S.settings.breakMin=+this.value;save();toast('쉬는 시간을 저장했어요')">${[0,10,15,20,25,30,40].map(n=>`<option value="${n}" ${(S.settings.breakMin??20)===n?'selected':''}>${n?n+'분':'끔'}</option>`).join('')}</select> 하면 쉬는 시간</label>
      <p class="muted" style="margin:0;font-size:13px">수수께끼로 한바탕 웃고 → 기지개 → 쉬운 퀴즈 3개를 풀면 다시 게임할 수 있어요. 보드게임은 판이 끝날 때까지 기다려 주고(최대 +10분), 퀴즈 뒤 그 판 그대로 이어서 해요.</p></section>
@@ -3461,14 +3462,31 @@ Object.assign(window,{chant});
 /* ---------- 💛 로그인 사랑 인사 (아빠가) ---------- */
 const FULLNAME={sion:'손시온',seungwoo:'손승우',uju:'손우주'};
 const LOVE={sion:['시온아, 사랑해!','아빠는 우리 시온이가 세상에서 제일 자랑스러워.'],seungwoo:['승우야, 사랑해!','아빠는 언제나 승우 편이야. 오늘도 신나게!'],
-  uju:['우주야, 사랑해!','우리 우주, 아빠가 꼬옥 안아 줄게!'],mom:['미나야, 사랑해!','늘 고마워. 우리 가족의 햇살은 당신이야.']};
+  uju:['우주야, 사랑해!','우리 우주, 아빠가 꼬옥 안아 줄게!'],mom:['미나야, 사랑해!','오빠는 항상 미나가 행복하길 응원해. 오늘도 스마일! 😊']};
 function loveHello(id){const L=LOVE[id];if(!L)return;
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(L[0]+' '+L[1]);u.lang='ko-KR';u.rate=.92;u.pitch=1.05;speechSynthesis.speak(u)}catch(e){}
+  dadSay(L[0]+' '+L[1]);
   const o=document.createElement('div');o.className='lovepop';o.setAttribute('role','status');
   o.innerHTML=`<div class="lp-box">${[...Array(14)].map((_,i)=>`<i style="--x:${(i*53)%100}%;--d:${(i%7)*.18}s">${['💛','💖','💕','❤️'][i%4]}</i>`).join('')}
-    ${avatar(id,96)}<b>${L[0]}</b><span>${L[1]}</span><small>— 아빠가 💛</small></div>`;
+    ${avatar(id,96)}<b>${L[0]}</b><span>${L[1]}</span><small>— ${id==='mom'?'오빠가':'아빠가'} 💛</small></div>`;
   o.onclick=()=>o.remove();document.body.appendChild(o);setTimeout(()=>{o.classList.add('out');setTimeout(()=>o.remove(),600)},4200)}
 window.loveHello=loveHello;
+/* 👨 아빠 목소리: 기기에 있는 한국어 '남자' 목소리를 먼저 고르고, 없으면 목소리를 낮춰서 */
+const MALE_RX=/injoon|hyunsu|minsu|jun|male|남성|남자|man\b|ko-kr-x-ko[cd]|kod|koc|smtm|yuna_m/i;
+function koVoices(){try{return speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang))}catch(e){return[]}}
+function dadVoice(){const vs=koVoices(),pick=S.settings&&S.settings.dadVoice;
+  if(pick){const v=vs.find(x=>x.name===pick);if(v)return{v,male:!!S.settings.dadVoiceMale||MALE_RX.test(v.name)}}
+  const m=vs.find(x=>MALE_RX.test(x.name)&&!/female|여성/i.test(x.name));if(m)return{v:m,male:true};return{v:vs[0]||null,male:false}}
+function dadSay(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,''));u.lang='ko-KR';const d=dadVoice();if(d.v)u.voice=d.v;
+  const pitch=S.settings&&S.settings.dadPitch!=null?S.settings.dadPitch:(d.male?.9:.55);u.pitch=pitch;u.rate=.9;speechSynthesis.speak(u)}catch(e){}}
+try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{if(view==='parent'){const el=document.getElementById('dadv');if(el&&el.options.length<2)render()}}}catch(e){}
+function dadVoiceUI(){const vs=koVoices(),d=dadVoice(),pv=S.settings.dadPitch!=null?S.settings.dadPitch:(d.male?.9:.55);
+  return `<section class="card sec"><h2 style="font-size:20px">👨 로그인 인사 · 아빠 목소리</h2>
+   <label class="f">목소리 <select class="in" id="dadv" onchange="S.settings.dadVoice=this.value;S.settings.dadPitch=null;save();render()">
+     <option value="">자동 (남자 목소리 먼저)</option>${vs.map(v=>`<option value="${esc(v.name)}" ${S.settings.dadVoice===v.name?'selected':''}>${esc(v.name)}${MALE_RX.test(v.name)?' 👨':''}</option>`).join('')}</select></label>
+   <label class="f">목소리 굵기 <span class="num" id="dpv">${pv<=.6?'아주 굵게':pv<=.8?'굵게':'보통'}</span><input type="range" min="0.3" max="1.1" step="0.05" value="${pv}" oninput="document.getElementById('dpv').textContent=this.value<=.6?'아주 굵게':this.value<=.8?'굵게':'보통'" onchange="S.settings.dadPitch=+this.value;save()"></label>
+   <div style="display:flex;gap:8px;flex-wrap:wrap">${['sion','seungwoo','uju','mom'].map(k=>`<button class="btn sm ghost" onclick="dadSay(LOVE['${k}'][0]+' '+LOVE['${k}'][1])">🔊 ${k==='mom'?'미나':nameOf(k)}</button>`).join('')}</div>
+   <p class="muted" style="margin:0;font-size:13px">목소리는 기기(탭·노트북)마다 달라요. 👨 표시가 남자 목소리예요. 없으면 '굵게'로 낮춰서 아빠 느낌을 내요. 각 기기에서 한 번 골라 주세요.</p></section>`}
+Object.assign(window,{dadSay,dadVoiceUI});
 
 /* ===================================================================
    🎬 만화 장면 엔진 — 일러스트 배경 · 등장 애니메이션 · 말풍선 · 대표 표지 · 자동 재생
