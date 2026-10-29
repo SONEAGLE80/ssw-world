@@ -1,5 +1,5 @@
 /* SSW World 오프라인 지원: 앱 파일은 저장해 두고, 글꼴은 처음 받을 때 함께 저장해요 */
-const CACHE = 'ssw-world-v11';
+const CACHE = 'ssw-world-v12';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
